@@ -8,7 +8,7 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #006400; /* verde scuro tipo feltro da gioco */
+    background-color: #006400; /* verde feltro */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #fff;
     text-align: center;
@@ -16,7 +16,7 @@
   .container {
     min-height: 100vh;
     padding: 20px;
-    background: rgba(0,0,0,0.3); /* leggero overlay scuro per contrasto */
+    background: rgba(0,0,0,0.3);
   }
   h1 {
     font-size: 3rem;
@@ -28,11 +28,31 @@
     background: #fff;
     color: #000;
     padding: 10px 15px;
-    margin: 5px;
+    margin: 5px 8px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     font-size: 24px;
     font-weight: bold;
+    position: relative;
+    min-width: 60px;
+    height: 70px;
+    line-height: 70px;
+    user-select: none;
+    vertical-align: middle;
+  }
+  /* Carta coperta: bianca con pattern diagonale */
+  .card.back {
+    background: repeating-linear-gradient(
+      45deg,
+      #ffffff,
+      #ffffff 4px,
+      #cccccc 4px,
+      #cccccc 8px
+    );
+    border: 2px solid #555555;
+    color: transparent !important;
+    box-shadow: inset 0 0 8px #888;
+    cursor: default;
   }
   .controls button {
     margin: 10px;
@@ -86,10 +106,12 @@
 <script>
   let deck, playerCards, dealerCards, bet=100;
   let balance = parseInt(localStorage.getItem('blackjackBalance')) || 1000;
+  let gameOver = false;
 
   const startBtn = document.getElementById('startBtn'),
         hitBtn = document.getElementById('hitBtn'),
-        standBtn = document.getElementById('standBtn');
+        standBtn = document.getElementById('standBtn'),
+        messageEl = document.getElementById('message');
 
   function setControls(start, hit, stand) {
     startBtn.disabled = !start;
@@ -129,30 +151,73 @@
     return total;
   }
 
-  function displayCards(hand, elementId) {
+  function calculatePartialDealerTotal() {
+    const firstCard = dealerCards[0];
+    let total = getCardValue(firstCard);
+    if (total === 11 && calculateTotal([firstCard]) > 21) total = 1;
+    return total;
+  }
+
+  function displayCards(hand, elementId, hideSecondDealerCard = false) {
     const el = document.getElementById(elementId);
     el.innerHTML = '';
-    hand.forEach(card => {
+    hand.forEach((card, index) => {
       const div = document.createElement('div');
-      div.className = 'card';
-      // Cuori e quadri in rosso
-      if(card.suit === '♥' || card.suit === '♦'){
-        div.innerHTML = `${card.value}<span class="red-suit">${card.suit}</span>`;
+      if ((elementId === 'dealer-cards') && hideSecondDealerCard && index === 1) {
+        div.className = 'card back';
       } else {
-        div.textContent = card.value + card.suit;
+        div.className = 'card';
+        if(card.suit === '♥' || card.suit === '♦') {
+          div.innerHTML = `${card.value}<span class="red-suit">${card.suit}</span>`;
+        } else {
+          div.textContent = card.value + card.suit;
+        }
       }
       el.appendChild(div);
     });
   }
 
-  function updateTotals() {
+  function updateTotals(hideDealerSecondCard = true) {
     document.getElementById('player-total').textContent = calculateTotal(playerCards);
-    document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
+    if(hideDealerSecondCard) {
+      document.getElementById('dealer-total').textContent = calculatePartialDealerTotal() + ' + ?';
+    } else {
+      document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
+    }
   }
 
   function updateBalance() {
     document.getElementById('balance').textContent = balance;
     localStorage.setItem('blackjackBalance', balance);
+  }
+
+  // Funzione trucco: pesca carta per dealer con manipolazione soft
+  function drawDealerCardCheated(currentDealerCards, playerTotal) {
+    // Pesca una carta dal mazzo (ultima)
+    let card = deck.pop();
+
+    // Calcola totale se aggiunge la carta
+    let tempHand = currentDealerCards.concat([card]);
+    let tempTotal = calculateTotal(tempHand);
+
+    // Se dealer perde o pareggia con questa carta, prova a trovare carta migliore
+    if (tempTotal <= playerTotal) {
+      const betterCards = deck.filter(c => {
+        let val = getCardValue(c);
+        let newTotal = calculateTotal(currentDealerCards.concat([c]));
+        return val > getCardValue(card) && newTotal > playerTotal && newTotal <= 21;
+      });
+
+      if (betterCards.length > 0) {
+        // Scegli una carta migliore a caso
+        const chosenCard = betterCards[Math.floor(Math.random() * betterCards.length)];
+        const idx = deck.indexOf(chosenCard);
+        if (idx > -1) deck.splice(idx, 1);
+        deck.push(card); // rimetti carta pescata prima
+        card = chosenCard;
+      }
+    }
+    return card;
   }
 
   function startGame() {
@@ -167,43 +232,66 @@
     playerCards = [deck.pop(), deck.pop()];
     dealerCards = [deck.pop(), deck.pop()];
     displayCards(playerCards, 'player-cards');
-    displayCards(dealerCards, 'dealer-cards');
-    updateTotals();
-    document.getElementById('message').textContent = '';
+    displayCards(dealerCards, 'dealer-cards', true);
+    updateTotals(true);
+    messageEl.textContent = '';
+    gameOver = false;
     setControls(false, true, true);
   }
 
   function hit() {
-    if (!playerCards || playerCards.length === 0) return;
+    if (gameOver || !playerCards.length) return;
     playerCards.push(deck.pop());
     displayCards(playerCards, 'player-cards');
-    updateTotals();
+    updateTotals(true);
     if (calculateTotal(playerCards) > 21) {
-      document.getElementById('message').textContent = 'Busted!';
+      messageEl.textContent = 'Busted!';
+      gameOver = true;
       setControls(true, false, false);
     }
   }
 
   function stand() {
-    if (!playerCards || playerCards.length === 0) return;
-    // Dealer "più aggressivo"
-    while (calculateTotal(dealerCards) < 17 || (Math.random() < 0.5 && calculateTotal(dealerCards) === 17)) {
-      dealerCards.push(deck.pop());
-    }
-    displayCards(dealerCards, 'dealer-cards');
-    updateTotals();
+    if (gameOver || !playerCards.length) return;
+
     const playerTotal = calculateTotal(playerCards);
+
+    while (true) {
+      let dealerTotal = calculateTotal(dealerCards);
+      if (dealerTotal < 17) {
+        dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
+      } else if (dealerTotal >= 17 && dealerTotal < 21) {
+        if (Math.random() < 0.75) {
+          dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+
+    displayCards(dealerCards, 'dealer-cards', false);
+    updateTotals(false);
+
     const dealerTotal = calculateTotal(dealerCards);
     let msg = '';
-    if (playerTotal > 21) msg = 'You lose!';
-    else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+
+    if (playerTotal > 21) {
+      msg = 'You lose!';
+    } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
       msg = 'You win!';
       balance += bet * 2;
-    } else {
+    } else if (playerTotal < dealerTotal) {
       msg = 'You lose!';
+    } else {
+      msg = 'Push!';
+      balance += bet;
     }
+
     updateBalance();
-    document.getElementById('message').textContent = msg;
+    messageEl.textContent = msg;
+    gameOver = true;
     setControls(true, false, false);
     playerCards = [];
   }
