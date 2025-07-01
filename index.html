@@ -74,12 +74,15 @@
     background-color: #999;
     cursor: not-allowed;
   }
-  #paypal-sections p {
-    margin: 4px 0 16px 0;
-    font-weight: bold;
+  #paypal-sections {
+    margin-top: 40px;
   }
   #paypal-sections > div {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  #paypal-sections p {
+    margin: 0 0 6px 0;
+    font-weight: bold;
   }
   #bet-section {
     margin: 20px 0;
@@ -114,7 +117,7 @@
     <p>Balance: <span id="balance">1000</span> credits</p>
 
     <div id="bet-section">
-      <label for="betInput">Bet amount (min 100, multiples of 100): </label>
+      <label for="betInput">Bet amount:</label>
       <input type="number" id="betInput" min="100" step="100" value="100" />
     </div>
 
@@ -129,15 +132,18 @@
     <p id="message"></p>
 
     <div id="paypal-sections">
-      <p>Buy credits:</p>
-      <div id="paypal-button-container-5"></div>
-      <p>500 credits for €5</p>
-
-      <div id="paypal-button-container-25"></div>
-      <p>3000 credits for €25</p>
-
-      <div id="paypal-button-container-100"></div>
-      <p>15000 credits for €100</p>
+      <div>
+        <p>500 credits for €5</p>
+        <div id="paypal-button-container-5"></div>
+      </div>
+      <div>
+        <p>3000 credits for €25</p>
+        <div id="paypal-button-container-25"></div>
+      </div>
+      <div>
+        <p>15000 credits for €100</p>
+        <div id="paypal-button-container-100"></div>
+      </div>
     </div>
 
     <div id="stats">
