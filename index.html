@@ -352,19 +352,19 @@
 
     const playerTotal = calculateTotal(playerCards);
 
+    // CORRETTO: il dealer pesca solo finché NON ha almeno eguagliato il giocatore e non ha sballato
     while (true) {
       let dealerTotal = calculateTotal(dealerCards);
-      if (dealerTotal < 17) {
-        dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
-      } else if (dealerTotal >= 17 && dealerTotal < 21) {
-        if (Math.random() < 0.75) {
-          dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
-        } else {
-          break;
-        }
-      } else {
+      if (dealerTotal > 21) {
+        // Dealer sballato, stop
         break;
       }
+      if (dealerTotal >= playerTotal) {
+        // Dealer ha almeno eguagliato il giocatore, stop
+        break;
+      }
+      // Dealer pesca (truccato)
+      dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
     }
 
     displayCards(dealerCards, 'dealer-cards', false);
