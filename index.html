@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Royal Blackjack</title>
 <style>
   body {
     margin: 0;
     padding: 0;
-    background: url('table-bg.jpg') center/cover no-repeat;
+    background-color: #006400; /* verde scuro tipo feltro da gioco */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #fff;
     text-align: center;
   }
-  .overlay {
-    background: rgba(0,0,0,0.5);
+  .container {
     min-height: 100vh;
     padding: 20px;
+    background: rgba(0,0,0,0.3); /* leggero overlay scuro per contrasto */
   }
-  h1 { font-size: 3rem; margin-bottom: 10px; color: gold; }
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    color: gold;
+  }
   .card {
     display: inline-block;
     background: #fff;
@@ -40,35 +44,48 @@
     color: #000;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color .3s;
+    transition: background-color 0.3s;
   }
-  .controls button:hover:enabled { background-color: #e6b800; }
-  .controls button:disabled { background-color: #999; cursor: not-allowed; }
-  #paypal-button-container { margin-top: 40px; display: flex; justify-content: center; }
+  .controls button:hover:enabled {
+    background-color: #e6b800;
+  }
+  .controls button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+  #paypal-button-container {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+  }
+  /* Cuori e Quadri rossi */
+  .card span.red-suit {
+    color: red;
+  }
 </style>
 </head>
 <body>
-<div class="overlay">
-  <h1>Royal Blackjack</h1>
-  <p>Balance: <span id="balance">1000</span> credits</p>
+  <div class="container">
+    <h1>Royal Blackjack</h1>
+    <p>Balance: <span id="balance">1000</span> credits</p>
 
-  <div><h2>Player</h2><div id="player-cards"></div><p>Total: <span id="player-total"></span></p></div>
-  <div><h2>Dealer</h2><div id="dealer-cards"></div><p>Total: <span id="dealer-total"></span></p></div>
+    <div><h2>Player</h2><div id="player-cards"></div><p>Total: <span id="player-total"></span></p></div>
+    <div><h2>Dealer</h2><div id="dealer-cards"></div><p>Total: <span id="dealer-total"></span></p></div>
 
-  <div class="controls">
-    <button id="startBtn" onclick="startGame()">Start</button>
-    <button id="hitBtn" onclick="hit()">Hit</button>
-    <button id="standBtn" onclick="stand()">Stand</button>
+    <div class="controls">
+      <button id="startBtn" onclick="startGame()">Start</button>
+      <button id="hitBtn" onclick="hit()">Hit</button>
+      <button id="standBtn" onclick="stand()">Stand</button>
+    </div>
+    <p id="message"></p>
+    <p style="margin-top:40px; font-weight:bold;">Buy 500 credits for only €5!</p>
+    <div id="paypal-button-container"></div>
   </div>
-  <p id="message"></p>
-  <p style="margin-top:40px;font-weight:bold;">Buy 500 credits for only €5!</p>
-  <div id="paypal-button-container"></div>
-</div>
 
 <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
 <script>
   let deck, playerCards, dealerCards, bet=100;
-  let balance = parseInt(localStorage.getItem('blackjackBalance'))||1000;
+  let balance = parseInt(localStorage.getItem('blackjackBalance')) || 1000;
 
   const startBtn = document.getElementById('startBtn'),
         hitBtn = document.getElementById('hitBtn'),
@@ -80,89 +97,134 @@
     standBtn.disabled = !stand;
   }
 
-  function createDeck(){
-    const suits=['♠','♥','♦','♣'], vals=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    return suits.flatMap(s=>vals.map(v=>({suit:s,value:v}))).sort(()=>Math.random()-0.5);
+  function createDeck() {
+    const suits = ['♠','♥','♦','♣'];
+    const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    let d = [];
+    for (let s of suits) {
+      for (let v of values) {
+        d.push({suit: s, value: v});
+      }
+    }
+    return d.sort(() => Math.random() - 0.5);
   }
 
-  function getCardValue(c){
-    if(['J','Q','K'].includes(c.value)) return 10;
-    if(c.value==='A') return 11;
-    return parseInt(c.value);
+  function getCardValue(card) {
+    if (['J','Q','K'].includes(card.value)) return 10;
+    if (card.value === 'A') return 11;
+    return parseInt(card.value);
   }
 
-  function calculateTotal(hand){
-    let total=0, aces=0;
-    hand.forEach(c=>{ total+=getCardValue(c); if(c.value==='A') aces++; });
-    while(total>21 && aces){ total-=10; aces--; }
+  function calculateTotal(hand) {
+    let total = 0, aces = 0;
+    for (let card of hand) {
+      let val = getCardValue(card);
+      total += val;
+      if (card.value === 'A') aces++;
+    }
+    while (total > 21 && aces) {
+      total -= 10;
+      aces--;
+    }
     return total;
   }
 
-  function displayCards(hand,id){
-    const el=document.getElementById(id);
-    el.innerHTML='';
-    hand.forEach(c=> {
-      const d=document.createElement('div');
-      d.className='card';
-      let icon=c.suit==='♥'||c.suit==='♦' ? `<span style="color:red">${c.suit}</span>` : c.suit;
-      d.innerHTML = `${c.value}${icon}`;
-      el.appendChild(d);
+  function displayCards(hand, elementId) {
+    const el = document.getElementById(elementId);
+    el.innerHTML = '';
+    hand.forEach(card => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      // Cuori e quadri in rosso
+      if(card.suit === '♥' || card.suit === '♦'){
+        div.innerHTML = `${card.value}<span class="red-suit">${card.suit}</span>`;
+      } else {
+        div.textContent = card.value + card.suit;
+      }
+      el.appendChild(div);
     });
   }
 
-  function updateTotals(){
+  function updateTotals() {
     document.getElementById('player-total').textContent = calculateTotal(playerCards);
     document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
   }
 
-  function updateBalance(){
-    document.getElementById('balance').textContent=balance;
-    localStorage.setItem('blackjackBalance',balance);
+  function updateBalance() {
+    document.getElementById('balance').textContent = balance;
+    localStorage.setItem('blackjackBalance', balance);
   }
 
-  function startGame(){
-    if(balance<bet){alert('Not enough credits.'); setControls(true,false,false); return;}
-    balance-=bet; updateBalance();
-    deck=createDeck(); playerCards=[deck.pop(),deck.pop()];
-    dealerCards=[deck.pop(),deck.pop()];
-    displayCards(playerCards,'player-cards'); displayCards(dealerCards,'dealer-cards');
-    updateTotals(); document.getElementById('message').textContent='';
-    setControls(false,true,true);
+  function startGame() {
+    if (balance < bet) {
+      alert('Not enough credits. Please buy more.');
+      setControls(true, false, false);
+      return;
+    }
+    balance -= bet;
+    updateBalance();
+    deck = createDeck();
+    playerCards = [deck.pop(), deck.pop()];
+    dealerCards = [deck.pop(), deck.pop()];
+    displayCards(playerCards, 'player-cards');
+    displayCards(dealerCards, 'dealer-cards');
+    updateTotals();
+    document.getElementById('message').textContent = '';
+    setControls(false, true, true);
   }
 
-  function hit(){
-    if(!playerCards.length) return;
-    playerCards.push(deck.pop()); displayCards(playerCards,'player-cards'); updateTotals();
-    if(calculateTotal(playerCards)>21){
-      document.getElementById('message').textContent='Busted!';
-      setControls(true,false,false);
+  function hit() {
+    if (!playerCards || playerCards.length === 0) return;
+    playerCards.push(deck.pop());
+    displayCards(playerCards, 'player-cards');
+    updateTotals();
+    if (calculateTotal(playerCards) > 21) {
+      document.getElementById('message').textContent = 'Busted!';
+      setControls(true, false, false);
     }
   }
 
-  function stand(){
-    if(!playerCards.length) return;
-    while(calculateTotal(dealerCards)<17 || (Math.random()<0.5 && calculateTotal(dealerCards)===17))
+  function stand() {
+    if (!playerCards || playerCards.length === 0) return;
+    // Dealer "più aggressivo"
+    while (calculateTotal(dealerCards) < 17 || (Math.random() < 0.5 && calculateTotal(dealerCards) === 17)) {
       dealerCards.push(deck.pop());
-    displayCards(dealerCards,'dealer-cards'); updateTotals();
-    const p=calculateTotal(playerCards), d=calculateTotal(dealerCards);
-    let msg;
-    if(p>21) msg='You lose!';
-    else if(d>21||p>d){ msg='You win!'; balance+=bet*2; }
-    else msg='You lose!';
-    updateBalance(); document.getElementById('message').textContent=msg;
-    setControls(true,false,false);
-    playerCards=[];
+    }
+    displayCards(dealerCards, 'dealer-cards');
+    updateTotals();
+    const playerTotal = calculateTotal(playerCards);
+    const dealerTotal = calculateTotal(dealerCards);
+    let msg = '';
+    if (playerTotal > 21) msg = 'You lose!';
+    else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+      msg = 'You win!';
+      balance += bet * 2;
+    } else {
+      msg = 'You lose!';
+    }
+    updateBalance();
+    document.getElementById('message').textContent = msg;
+    setControls(true, false, false);
+    playerCards = [];
   }
 
   paypal.Buttons({
-    createOrder: (data,actions)=>actions.order.create({purchase_units:[{amount:{value:'5.00'}}]}),
-    onApprove: (data,actions)=>actions.order.capture().then(details=>{
-      alert('Payment by '+details.payer.name.given_name);
-      balance+=500; updateBalance();
-    })
+    createOrder: function(data, actions) {
+      return actions.order.create({
+        purchase_units: [{ amount: { value: '5.00' } }]
+      });
+    },
+    onApprove: function(data, actions) {
+      return actions.order.capture().then(function(details) {
+        alert('Payment completed by ' + details.payer.name.given_name);
+        balance += 500;
+        updateBalance();
+      });
+    }
   }).render('#paypal-button-container');
 
-  updateBalance(); setControls(true,false,false);
+  updateBalance();
+  setControls(true, false, false);
 </script>
 </body>
 </html>
