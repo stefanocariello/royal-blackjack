@@ -39,8 +39,12 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
-    .controls button:hover {
+    .controls button:hover:enabled {
       background-color: #e6b800;
+    }
+    .controls button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
     }
     #paypal-button-container {
       margin-top: 40px;
@@ -74,7 +78,15 @@
   <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
   <script>
     let deck, playerCards, dealerCards, bet = 100;
-let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
+    let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
+
+    function disableControls() {
+      document.querySelectorAll('.controls button').forEach(btn => btn.disabled = true);
+    }
+
+    function enableControls() {
+      document.querySelectorAll('.controls button').forEach(btn => btn.disabled = false);
+    }
 
     function createDeck() {
       const suits = ['♠', '♥', '♦', '♣'];
@@ -143,19 +155,22 @@ let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
       displayCards(dealerCards, 'dealer-cards');
       updateTotals();
       document.getElementById('message').textContent = '';
+      enableControls();
     }
 
     function hit() {
-      if (!playerCards) return;
+      if (!playerCards || playerCards.length === 0) return;
       playerCards.push(deck.pop());
       displayCards(playerCards, 'player-cards');
       updateTotals();
       if (calculateTotal(playerCards) > 21) {
         document.getElementById('message').textContent = 'Busted!';
+        disableControls();
       }
     }
 
     function stand() {
+      if (!playerCards || playerCards.length === 0) return;
       while (calculateTotal(dealerCards) < 17) {
         dealerCards.push(deck.pop());
       }
@@ -175,6 +190,8 @@ let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
       }
       updateBalance();
       document.getElementById('message').textContent = msg;
+      disableControls();
+      playerCards = [];
     }
 
     paypal.Buttons({
@@ -193,6 +210,7 @@ let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
     }).render('#paypal-button-container');
 
     updateBalance();
+    disableControls(); // disable buttons on load
   </script>
 </body>
 </html>
