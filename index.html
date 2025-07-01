@@ -33,22 +33,21 @@
 </head>
 <body>
   <h1>Blackjack Online</h1>
-  <p>Balance: <span id="balance">1000</span> credits</p>
+  <p>Saldo: <span id="balance">1000</span> crediti</p>
   <div>
-    <h2>Player</h2>
+    <h2>Giocatore</h2>
     <div id="player-cards"></div>
-    <p>Total: <span id="player-total"></span></p>
+    <p>Totale: <span id="player-total"></span></p>
   </div>
   <div>
-    <h2>Dealer</h2>
+    <h2>Mazziere</h2>
     <div id="dealer-cards"></div>
-    <p>Total: <span id="dealer-total"></span></p>
+    <p>Totale: <span id="dealer-total"></span></p>
   </div>
   <div class="controls">
-    <button onclick="startGame()">Start</button>
+    <button onclick="startGame()">Inizia</button>
     <button onclick="hit()">Hit</button>
     <button onclick="stand()">Stand</button>
-    <button onclick="resetGame()">Reset</button>
   </div>
   <p id="message"></p>
   <div id="paypal-button-container"></div>
@@ -111,7 +110,7 @@
 
     function startGame() {
       if (balance < bet) {
-        alert('Insufficient credits. Please buy more.');
+        alert('Credito insufficiente. Acquista più crediti.');
         return;
       }
       balance -= bet;
@@ -131,7 +130,7 @@
       displayCards(playerCards, 'player-cards');
       updateTotals();
       if (calculateTotal(playerCards) > 21) {
-        document.getElementById('message').textContent = 'Busted!';
+        document.getElementById('message').textContent = 'Hai sballato!';
       }
     }
 
@@ -144,27 +143,17 @@
       const playerTotal = calculateTotal(playerCards);
       const dealerTotal = calculateTotal(dealerCards);
       let msg = '';
-      if (playerTotal > 21) msg = 'You lose!';
+      if (playerTotal > 21) msg = 'Hai perso!';
       else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-        msg = 'You win!';
+        msg = 'Hai vinto!';
         balance += bet * 2;
-      } else if (playerTotal < dealerTotal) msg = 'You lose!';
+      } else if (playerTotal < dealerTotal) msg = 'Hai perso!';
       else {
-        msg = 'Push!';
+        msg = 'Pareggio!';
         balance += bet;
       }
       updateBalance();
       document.getElementById('message').textContent = msg;
-    }
-
-    function resetGame() {
-      playerCards = [];
-      dealerCards = [];
-      displayCards([], 'player-cards');
-      displayCards([], 'dealer-cards');
-      document.getElementById('player-total').textContent = '';
-      document.getElementById('dealer-total').textContent = '';
-      document.getElementById('message').textContent = '';
     }
 
     paypal.Buttons({
@@ -175,7 +164,7 @@
       },
       onApprove: function(data, actions) {
         return actions.order.capture().then(function(details) {
-          alert('Payment completed by ' + details.payer.name.given_name);
+          alert('Pagamento completato da ' + details.payer.name.given_name);
           balance += 500;
           updateBalance();
         });
