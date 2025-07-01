@@ -111,7 +111,8 @@
   const startBtn = document.getElementById('startBtn'),
         hitBtn = document.getElementById('hitBtn'),
         standBtn = document.getElementById('standBtn'),
-        messageEl = document.getElementById('message');
+        messageEl = document.getElementById('message'),
+        balanceEl = document.getElementById('balance');
 
   function setControls(start, hit, stand) {
     startBtn.disabled = !start;
@@ -187,20 +188,15 @@
   }
 
   function updateBalance() {
-    document.getElementById('balance').textContent = balance;
+    balanceEl.textContent = balance;
     localStorage.setItem('blackjackBalance', balance);
   }
 
-  // Funzione trucco: pesca carta per dealer con manipolazione soft
   function drawDealerCardCheated(currentDealerCards, playerTotal) {
-    // Pesca una carta dal mazzo (ultima)
     let card = deck.pop();
-
-    // Calcola totale se aggiunge la carta
     let tempHand = currentDealerCards.concat([card]);
     let tempTotal = calculateTotal(tempHand);
 
-    // Se dealer perde o pareggia con questa carta, prova a trovare carta migliore
     if (tempTotal <= playerTotal) {
       const betterCards = deck.filter(c => {
         let val = getCardValue(c);
@@ -209,11 +205,10 @@
       });
 
       if (betterCards.length > 0) {
-        // Scegli una carta migliore a caso
         const chosenCard = betterCards[Math.floor(Math.random() * betterCards.length)];
         const idx = deck.indexOf(chosenCard);
         if (idx > -1) deck.splice(idx, 1);
-        deck.push(card); // rimetti carta pescata prima
+        deck.push(card);
         card = chosenCard;
       }
     }
@@ -295,6 +290,19 @@
     setControls(true, false, false);
     playerCards = [];
   }
+
+  // Codice segreto: conta i click e aggiunge 1000 crediti dopo 21 tocchi
+  let secretTapCount = 0;
+  const SECRET_TAPS_REQUIRED = 21;
+  document.body.addEventListener('click', () => {
+    secretTapCount++;
+    if(secretTapCount === SECRET_TAPS_REQUIRED) {
+      balance += 1000;
+      updateBalance();
+      alert('Secret code activated! 1000 credits added.');
+      secretTapCount = 0;
+    }
+  });
 
   paypal.Buttons({
     createOrder: function(data, actions) {
