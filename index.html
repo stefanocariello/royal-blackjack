@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blackjack Online</title>
+  <title>Royal Blackjack</title>
   <style>
     body {
       background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
@@ -68,11 +68,13 @@
     <button onclick="stand()">Stand</button>
   </div>
   <p id="message"></p>
+  <p style="margin-top:40px;font-weight:bold;">Buy 500 credits for only €5!</p>
   <div id="paypal-button-container"></div>
 
   <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
   <script>
-    let deck, playerCards, dealerCards, balance = 1000, bet = 100;
+    let deck, playerCards, dealerCards, bet = 100;
+let balance = parseInt(localStorage.getItem("blackjackBalance")) || 1000;
 
     function createDeck() {
       const suits = ['♠', '♥', '♦', '♣'];
@@ -124,6 +126,7 @@
 
     function updateBalance() {
       document.getElementById('balance').textContent = balance;
+      localStorage.setItem("blackjackBalance", balance);
     }
 
     function startGame() {
