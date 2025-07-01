@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack Online</title>
+  <style>
+    body {
+      background-color: #0b3d0b;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      display: inline-block;
+      background-color: white;
+      color: black;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      font-size: 24px;
+    }
+    .controls button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #paypal-button-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Blackjack Online</h1>
+  <p>Balance: <span id="balance">1000</span> credits</p>
+  <div>
+    <h2>Player</h2>
+    <div id="player-cards"></div>
+    <p>Total: <span id="player-total"></span></p>
+  </div>
+  <div>
+    <h2>Dealer</h2>
+    <div id="dealer-cards"></div>
+    <p>Total: <span id="dealer-total"></span></p>
+  </div>
+  <div class="controls">
+    <button onclick="startGame()">Start</button>
+    <button onclick="hit()">Hit</button>
+    <button onclick="stand()">Stand</button>
+    <button onclick="resetGame()">Reset</button>
+  </div>
+  <p id="message"></p>
+  <div id="paypal-button-container"></div>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
+  <script>
+    let deck, playerCards, dealerCards, balance = 1000, bet = 100;
+
+    function createDeck() {
+      const suits = ['♠', '♥', '♦', '♣'];
+      const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      let d = [];
+      for (let s of suits) {
+        for (let v of values) {
+          d.push({ suit: s, value: v });
+        }
+      }
+      return d.sort(() => Math.random() - 0.5);
+    }
+
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.value)) return 10;
+      if (card.value === 'A') return 11;
+      return parseInt(card.value);
+    }
+
+    function calculateTotal(hand) {
+      let total = 0, aces = 0;
+      for (let card of hand) {
+        let val = getCardValue(card);
+        total += val;
+        if (card.value === 'A') aces++;
+      }
+      while (total > 21 && aces) {
+        total -= 10;
+        aces--;
+      }
+      return total;
+    }
+
+    function displayCards(hand, elementId) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = '';
+      hand.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.textContent = card.value + card.suit;
+        el.appendChild(div);
+      });
+    }
+
+    function updateTotals() {
+      document.getElementById('player-total').textContent = calculateTotal(playerCards);
+      document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
+    }
+
+    function updateBalance() {
+      document.getElementById('balance').textContent = balance;
+    }
+
+    function startGame() {
+      if (balance < bet) {
+        alert('Insufficient credits. Please buy more.');
+        return;
+      }
+      balance -= bet;
+      updateBalance();
+      deck = createDeck();
+      playerCards = [deck.pop(), deck.pop()];
+      dealerCards = [deck.pop(), deck.pop()];
+      displayCards(playerCards, 'player-cards');
+      displayCards(dealerCards, 'dealer-cards');
+      updateTotals();
+      document.getElementById('message').textContent = '';
+    }
+
+    function hit() {
+      if (!playerCards) return;
+      playerCards.push(deck.pop());
+      displayCards(playerCards, 'player-cards');
+      updateTotals();
+      if (calculateTotal(playerCards) > 21) {
+        document.getElementById('message').textContent = 'Busted!';
+      }
+    }
+
+    function stand() {
+      while (calculateTotal(dealerCards) < 17) {
+        dealerCards.push(deck.pop());
+      }
+      displayCards(dealerCards, 'dealer-cards');
+      updateTotals();
+      const playerTotal = calculateTotal(playerCards);
+      const dealerTotal = calculateTotal(dealerCards);
+      let msg = '';
+      if (playerTotal > 21) msg = 'You lose!';
+      else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+        msg = 'You win!';
+        balance += bet * 2;
+      } else if (playerTotal < dealerTotal) msg = 'You lose!';
+      else {
+        msg = 'Push!';
+        balance += bet;
+      }
+      updateBalance();
+      document.getElementById('message').textContent = msg;
+    }
+
+    function resetGame() {
+      playerCards = [];
+      dealerCards = [];
+      displayCards([], 'player-cards');
+      displayCards([], 'dealer-cards');
+      document.getElementById('player-total').textContent = '';
+      document.getElementById('dealer-total').textContent = '';
+      document.getElementById('message').textContent = '';
+    }
+
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{ amount: { value: '5.00' } }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          alert('Payment completed by ' + details.payer.name.given_name);
+          balance += 500;
+          updateBalance();
+        });
+      }
+    }).render('#paypal-button-container');
+
+    updateBalance();
+  </script>
+</body>
+</html>
