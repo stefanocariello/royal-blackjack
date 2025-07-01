@@ -8,7 +8,7 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #006400;
+    background-color: #006400; /* verde feltro */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #fff;
     text-align: center;
@@ -129,6 +129,24 @@
         pushesEl = document.getElementById('pushes'),
         betSection = document.getElementById('bet-section');
 
+  // Secret code tap count for 1000 credits
+  let secretTapCount = 0;
+  const SECRET_TAPS_REQUIRED = 21;
+
+  function resetSecretTapCount() {
+    secretTapCount = 0;
+  }
+
+  document.body.addEventListener('click', () => {
+    secretTapCount++;
+    if(secretTapCount === SECRET_TAPS_REQUIRED) {
+      balance += 1000;
+      updateBalance();
+      alert('Secret code activated! 1000 credits added.');
+      secretTapCount = 0;
+    }
+  });
+
   function updateStatsDisplay() {
     winsEl.textContent = wins;
     lossesEl.textContent = losses;
@@ -199,6 +217,7 @@
   }
 
   function startGame() {
+    resetSecretTapCount();
     let betInput = parseInt(document.getElementById('betAmount').value);
     if (isNaN(betInput) || betInput < 100 || betInput % 100 !== 0) {
       alert('Minimum bet is 100 and must be a multiple of 100.');
@@ -224,6 +243,7 @@
   }
 
   function hit() {
+    resetSecretTapCount();
     if (gameOver || !playerCards.length) return;
     playerCards.push(deck.pop());
     displayCards(playerCards, 'player-cards');
@@ -238,6 +258,7 @@
   }
 
   function stand() {
+    resetSecretTapCount();
     if (gameOver || !playerCards.length) return;
     const playerTotal = calculateTotal(playerCards);
     while (true) {
