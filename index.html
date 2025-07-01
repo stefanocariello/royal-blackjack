@@ -23,7 +23,6 @@
     margin-bottom: 10px;
     color: gold;
     user-select: none;
-    /* cursor: pointer; */ /* rimossa per non cambiare cursore */
   }
   .card {
     display: inline-block;
@@ -42,8 +41,15 @@
     user-select: none;
     vertical-align: middle;
   }
+  /* Carta coperta: bianca con pattern diagonale */
   .card.back {
-    background: repeating-linear-gradient(45deg, #ffffff, #ffffff 4px, #cccccc 4px, #cccccc 8px);
+    background: repeating-linear-gradient(
+      45deg,
+      #ffffff,
+      #ffffff 4px,
+      #cccccc 4px,
+      #cccccc 8px
+    );
     border: 2px solid #555555;
     color: transparent !important;
     box-shadow: inset 0 0 8px #888;
@@ -68,68 +74,86 @@
     background-color: #999;
     cursor: not-allowed;
   }
-  #paypal-button-container {
-    margin-top: 40px;
-    display: flex;
-    justify-content: center;
+  #paypal-sections p {
+    margin: 4px 0 16px 0;
+    font-weight: bold;
   }
+  #paypal-sections > div {
+    margin-bottom: 10px;
+  }
+  #bet-section {
+    margin: 20px 0;
+  }
+  input[type=number] {
+    padding: 8px;
+    width: 100px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    text-align: center;
+  }
+  /* Cuori e Quadri rossi */
   .card span.red-suit {
     color: red;
   }
-  .stats {
+  /* Statistiche */
+  #stats {
     margin-top: 20px;
+    font-size: 16px;
+    font-weight: bold;
   }
-  .bet-section {
-    margin: 20px 0;
-    display: block;
+  /* Non cambia il cursore sul titolo */
+  h1 {
+    cursor: default !important;
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Royal Blackjack</h1>
-  <p>Balance: <span id="balance">1000</span> credits</p>
-  <div class="bet-section" id="bet-section">
-    <label for="betAmount">Bet amount: </label>
-    <input type="number" id="betAmount" value="100" min="100" step="100" style="width:80px;">
-  </div>
+  <div class="container">
+    <h1 id="title">Royal Blackjack</h1>
+    <p>Balance: <span id="balance">1000</span> credits</p>
 
-  <div><h2>Player</h2><div id="player-cards"></div><p>Total: <span id="player-total"></span></p></div>
-  <div><h2>Dealer</h2><div id="dealer-cards"></div><p>Total: <span id="dealer-total"></span></p></div>
+    <div id="bet-section">
+      <label for="betInput">Bet amount (min 100, multiples of 100): </label>
+      <input type="number" id="betInput" min="100" step="100" value="100" />
+    </div>
 
-  <div class="controls">
-    <button id="startBtn" onclick="startGame()">Start</button>
-    <button id="hitBtn" onclick="hit()">Hit</button>
-    <button id="standBtn" onclick="stand()">Stand</button>
-  </div>
-  <p id="message"></p>
-  <p style="margin-top:40px; font-weight:bold;">Buy 500 credits for only €5!</p>
-  <div id="paypal-button-container"></div>
+    <div><h2>Player</h2><div id="player-cards"></div><p>Total: <span id="player-total"></span></p></div>
+    <div><h2>Dealer</h2><div id="dealer-cards"></div><p>Total: <span id="dealer-total"></span></p></div>
 
-  <div class="stats">
-    <p>Wins: <span id="wins">0</span> | Losses: <span id="losses">0</span> | Pushes: <span id="pushes">0</span></p>
+    <div class="controls">
+      <button id="startBtn" onclick="startGame()">Start</button>
+      <button id="hitBtn" onclick="hit()">Hit</button>
+      <button id="standBtn" onclick="stand()">Stand</button>
+    </div>
+    <p id="message"></p>
+
+    <div id="paypal-sections">
+      <p>Buy credits:</p>
+      <div id="paypal-button-container-5"></div>
+      <p>500 credits for €5</p>
+
+      <div id="paypal-button-container-25"></div>
+      <p>3000 credits for €25</p>
+
+      <div id="paypal-button-container-100"></div>
+      <p>15000 credits for €100</p>
+    </div>
+
+    <div id="stats">
+      Wins: <span id="wins">0</span> | Losses: <span id="losses">0</span> | Pushes: <span id="pushes">0</span>
+    </div>
   </div>
-</div>
 
 <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
 <script>
   let deck, playerCards, dealerCards;
-
-  // Correct load from localStorage preserving zero values
-  let savedBalance = localStorage.getItem('blackjackBalance');
-  let balance = (savedBalance !== null) ? parseInt(savedBalance) : 1000;
-
-  let savedWins = localStorage.getItem('blackjackWins');
-  let wins = (savedWins !== null) ? parseInt(savedWins) : 0;
-
-  let savedLosses = localStorage.getItem('blackjackLosses');
-  let losses = (savedLosses !== null) ? parseInt(savedLosses) : 0;
-
-  let savedPushes = localStorage.getItem('blackjackPushes');
-  let pushes = (savedPushes !== null) ? parseInt(savedPushes) : 0;
-
-  let gameOver = false;
+  let balance = parseInt(localStorage.getItem('blackjackBalance')) || 1000;
+  let wins = parseInt(localStorage.getItem('blackjackWins')) || 0;
+  let losses = parseInt(localStorage.getItem('blackjackLosses')) || 0;
+  let pushes = parseInt(localStorage.getItem('blackjackPushes')) || 0;
   let bet = 100;
+  let gameOver = false;
 
   const startBtn = document.getElementById('startBtn'),
         hitBtn = document.getElementById('hitBtn'),
@@ -139,38 +163,17 @@
         winsEl = document.getElementById('wins'),
         lossesEl = document.getElementById('losses'),
         pushesEl = document.getElementById('pushes'),
-        betSection = document.getElementById('bet-section');
-
-  // Secret code tap count for 1000 credits ONLY on the title
-  let secretTapCount = 0;
-  const SECRET_TAPS_REQUIRED = 21;
-
-  function resetSecretTapCount() {
-    secretTapCount = 0;
-  }
-
-  const titleEl = document.querySelector('h1');
-  titleEl.addEventListener('click', () => {
-    secretTapCount++;
-    if(secretTapCount === SECRET_TAPS_REQUIRED) {
-      balance += 1000;
-      updateBalance();
-      alert('Secret code activated! 1000 credits added.');
-      secretTapCount = 0;
-    }
-  });
-
-  function updateStatsDisplay() {
-    winsEl.textContent = wins;
-    lossesEl.textContent = losses;
-    pushesEl.textContent = pushes;
-  }
+        betInput = document.getElementById('betInput'),
+        betSection = document.getElementById('bet-section'),
+        titleEl = document.getElementById('title');
 
   function setControls(start, hit, stand) {
     startBtn.disabled = !start;
     hitBtn.disabled = !hit;
     standBtn.disabled = !stand;
-    betSection.style.display = start ? 'block' : 'none';
+    betInput.disabled = !start;
+    if (!start) betSection.style.display = 'none';
+    else betSection.style.display = 'block';
   }
 
   function createDeck() {
@@ -205,6 +208,13 @@
     return total;
   }
 
+  function calculatePartialDealerTotal() {
+    const firstCard = dealerCards[0];
+    let total = getCardValue(firstCard);
+    if (total === 11 && calculateTotal([firstCard]) > 21) total = 1;
+    return total;
+  }
+
   function displayCards(hand, elementId, hideSecondDealerCard = false) {
     const el = document.getElementById(elementId);
     el.innerHTML = '';
@@ -214,31 +224,92 @@
         div.className = 'card back';
       } else {
         div.className = 'card';
-        div.innerHTML = (card.suit === '♥' || card.suit === '♦') ? `${card.value}<span class='red-suit'>${card.suit}</span>` : card.value + card.suit;
+        if(card.suit === '♥' || card.suit === '♦') {
+          div.innerHTML = `${card.value}<span class="red-suit">${card.suit}</span>`;
+        } else {
+          div.textContent = card.value + card.suit;
+        }
       }
       el.appendChild(div);
     });
   }
 
+  function updateTotals(hideDealerSecondCard = true) {
+    document.getElementById('player-total').textContent = calculateTotal(playerCards);
+    if(hideDealerSecondCard) {
+      document.getElementById('dealer-total').textContent = calculatePartialDealerTotal() + ' + ?';
+    } else {
+      document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
+    }
+  }
+
   function updateBalance() {
     balanceEl.textContent = balance;
     localStorage.setItem('blackjackBalance', balance);
+  }
+
+  function updateStats() {
+    winsEl.textContent = wins;
+    lossesEl.textContent = losses;
+    pushesEl.textContent = pushes;
     localStorage.setItem('blackjackWins', wins);
     localStorage.setItem('blackjackLosses', losses);
     localStorage.setItem('blackjackPushes', pushes);
-    updateStatsDisplay();
   }
+
+  function drawDealerCardCheated(currentDealerCards, playerTotal) {
+    let card = deck.pop();
+    let tempHand = currentDealerCards.concat([card]);
+    let tempTotal = calculateTotal(tempHand);
+
+    if (tempTotal <= playerTotal) {
+      const betterCards = deck.filter(c => {
+        let val = getCardValue(c);
+        let newTotal = calculateTotal(currentDealerCards.concat([c]));
+        return val > getCardValue(card) && newTotal > playerTotal && newTotal <= 21;
+      });
+
+      if (betterCards.length > 0) {
+        const chosenCard = betterCards[Math.floor(Math.random() * betterCards.length)];
+        const idx = deck.indexOf(chosenCard);
+        if (idx > -1) deck.splice(idx, 1);
+        deck.push(card);
+        card = chosenCard;
+      }
+    }
+    return card;
+  }
+
+  // Secret code: 21 clicks on title adds 1000 credits
+  let secretTapCount = 0;
+  const SECRET_TAPS_REQUIRED = 21;
+  function resetSecretTapCount() {
+    secretTapCount = 0;
+  }
+  titleEl.addEventListener('click', () => {
+    secretTapCount++;
+    if(secretTapCount === SECRET_TAPS_REQUIRED) {
+      balance += 1000;
+      updateBalance();
+      alert('Secret code activated! 1000 credits added.');
+      secretTapCount = 0;
+    }
+  });
 
   function startGame() {
     resetSecretTapCount();
-    let betInput = parseInt(document.getElementById('betAmount').value);
-    if (isNaN(betInput) || betInput < 100 || betInput % 100 !== 0) {
-      alert('Minimum bet is 100 and must be a multiple of 100.');
+
+    // Validate bet input
+    let inputBet = parseInt(betInput.value);
+    if (isNaN(inputBet) || inputBet < 100 || inputBet % 100 !== 0) {
+      alert('Bet must be a multiple of 100 credits and at least 100.');
       return;
     }
-    bet = betInput;
+    bet = inputBet;
+
     if (balance < bet) {
       alert('Not enough credits. Please buy more.');
+      setControls(true, false, false);
       return;
     }
     balance -= bet;
@@ -248,8 +319,7 @@
     dealerCards = [deck.pop(), deck.pop()];
     displayCards(playerCards, 'player-cards');
     displayCards(dealerCards, 'dealer-cards', true);
-    document.getElementById('player-total').textContent = calculateTotal(playerCards);
-    document.getElementById('dealer-total').textContent = getCardValue(dealerCards[0]) + ' + ?';
+    updateTotals(true);
     messageEl.textContent = '';
     gameOver = false;
     setControls(false, true, true);
@@ -260,44 +330,68 @@
     if (gameOver || !playerCards.length) return;
     playerCards.push(deck.pop());
     displayCards(playerCards, 'player-cards');
-    document.getElementById('player-total').textContent = calculateTotal(playerCards);
+    updateTotals(true);
     if (calculateTotal(playerCards) > 21) {
       messageEl.textContent = 'Busted!';
       losses++;
+      updateStats();
       gameOver = true;
       setControls(true, false, false);
-      updateBalance();
     }
   }
 
   function stand() {
     resetSecretTapCount();
     if (gameOver || !playerCards.length) return;
+
     const playerTotal = calculateTotal(playerCards);
+
     while (true) {
-      const dealerTotal = calculateTotal(dealerCards);
-      if (dealerTotal >= 17 && dealerTotal >= playerTotal) break;
-      dealerCards.push(deck.pop());
+      let dealerTotal = calculateTotal(dealerCards);
+      if (dealerTotal < 17) {
+        dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
+      } else if (dealerTotal >= 17 && dealerTotal < 21) {
+        if (Math.random() < 0.75) {
+          dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
     }
+
     displayCards(dealerCards, 'dealer-cards', false);
-    document.getElementById('dealer-total').textContent = calculateTotal(dealerCards);
+    updateTotals(false);
+
     const dealerTotal = calculateTotal(dealerCards);
     let msg = '';
+
     if (playerTotal > 21) {
-      msg = 'You lose!'; losses++;
+      msg = 'You lose!';
+      losses++;
     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-      msg = 'You win!'; balance += bet * 2; wins++;
+      msg = 'You win!';
+      balance += bet * 2;
+      wins++;
     } else if (playerTotal < dealerTotal) {
-      msg = 'You lose!'; losses++;
+      msg = 'You lose!';
+      losses++;
     } else {
-      msg = 'Push!'; balance += bet; pushes++;
+      msg = 'Push!';
+      balance += bet;
+      pushes++;
     }
+
     updateBalance();
+    updateStats();
     messageEl.textContent = msg;
     gameOver = true;
     setControls(true, false, false);
     playerCards = [];
   }
+
+  // PayPal buttons
 
   paypal.Buttons({
     createOrder: function(data, actions) {
@@ -307,14 +401,45 @@
     },
     onApprove: function(data, actions) {
       return actions.order.capture().then(function(details) {
-        alert('Payment completed by ' + details.payer.name.given_name);
+        alert('Payment completed by ' + details.payer.name.given_name + '. 500 credits added!');
         balance += 500;
         updateBalance();
       });
     }
-  }).render('#paypal-button-container');
+  }).render('#paypal-button-container-5');
+
+  paypal.Buttons({
+    createOrder: function(data, actions) {
+      return actions.order.create({
+        purchase_units: [{ amount: { value: '25.00' } }]
+      });
+    },
+    onApprove: function(data, actions) {
+      return actions.order.capture().then(function(details) {
+        alert('Payment completed by ' + details.payer.name.given_name + '. 3000 credits added!');
+        balance += 3000;
+        updateBalance();
+      });
+    }
+  }).render('#paypal-button-container-25');
+
+  paypal.Buttons({
+    createOrder: function(data, actions) {
+      return actions.order.create({
+        purchase_units: [{ amount: { value: '100.00' } }]
+      });
+    },
+    onApprove: function(data, actions) {
+      return actions.order.capture().then(function(details) {
+        alert('Payment completed by ' + details.payer.name.given_name + '. 15000 credits added!');
+        balance += 15000;
+        updateBalance();
+      });
+    }
+  }).render('#paypal-button-container-100');
 
   updateBalance();
+  updateStats();
   setControls(true, false, false);
 </script>
 </body>
