@@ -105,7 +105,9 @@
 <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
 <script>
   let deck, playerCards, dealerCards, bet=100;
-  let balance = parseInt(localStorage.getItem('blackjackBalance')) || 1000;
+  // Correzione per mantenere saldo zero
+  let savedBalance = localStorage.getItem('blackjackBalance');
+  let balance = (savedBalance !== null) ? parseInt(savedBalance) : 1000;
   let gameOver = false;
 
   const startBtn = document.getElementById('startBtn'),
