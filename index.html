@@ -105,7 +105,6 @@
 <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
 <script>
   let deck, playerCards, dealerCards, bet=100;
-  // Correzione per mantenere saldo zero
   let savedBalance = localStorage.getItem('blackjackBalance');
   let balance = (savedBalance !== null) ? parseInt(savedBalance) : 1000;
   let gameOver = false;
@@ -217,7 +216,26 @@
     return card;
   }
 
+  // Codice segreto: conta i click e aggiunge 1000 crediti dopo 21 tocchi
+  let secretTapCount = 0;
+  const SECRET_TAPS_REQUIRED = 21;
+
+  function resetSecretTapCount() {
+    secretTapCount = 0;
+  }
+
+  document.body.addEventListener('click', () => {
+    secretTapCount++;
+    if(secretTapCount === SECRET_TAPS_REQUIRED) {
+      balance += 1000;
+      updateBalance();
+      alert('Secret code activated! 1000 credits added.');
+      secretTapCount = 0;
+    }
+  });
+
   function startGame() {
+    resetSecretTapCount();
     if (balance < bet) {
       alert('Not enough credits. Please buy more.');
       setControls(true, false, false);
@@ -237,6 +255,7 @@
   }
 
   function hit() {
+    resetSecretTapCount();
     if (gameOver || !playerCards.length) return;
     playerCards.push(deck.pop());
     displayCards(playerCards, 'player-cards');
@@ -249,6 +268,7 @@
   }
 
   function stand() {
+    resetSecretTapCount();
     if (gameOver || !playerCards.length) return;
 
     const playerTotal = calculateTotal(playerCards);
@@ -292,19 +312,6 @@
     setControls(true, false, false);
     playerCards = [];
   }
-
-  // Codice segreto: conta i click e aggiunge 1000 crediti dopo 21 tocchi
-  let secretTapCount = 0;
-  const SECRET_TAPS_REQUIRED = 21;
-  document.body.addEventListener('click', () => {
-    secretTapCount++;
-    if(secretTapCount === SECRET_TAPS_REQUIRED) {
-      balance += 1000;
-      updateBalance();
-      alert('Secret code activated! 1000 credits added.');
-      secretTapCount = 0;
-    }
-  });
 
   paypal.Buttons({
     createOrder: function(data, actions) {
