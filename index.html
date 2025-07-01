@@ -144,6 +144,7 @@
     function startGame() {
       if (balance < bet) {
         alert('Not enough credits. Please buy more.');
+        disableControls();
         return;
       }
       balance -= bet;
@@ -210,7 +211,7 @@
     }).render('#paypal-button-container');
 
     updateBalance();
-    disableControls(); // disable buttons on load
+    disableControls(); // Disabilita i pulsanti all'avvio
   </script>
 </body>
 </html>
