@@ -154,7 +154,12 @@
 <script src="https://www.paypal.com/sdk/js?client-id=AeUt3K_VP-YoK2n4crF2v3-lcSIGpVTOwkcCdm_MjlYZCgSdgcmbn-LA63t1JWIVo4PN4RX_wcz-7cOY&currency=EUR"></script>
 <script>
   let deck, playerCards, dealerCards;
-  let balance = parseInt(localStorage.getItem('blackjackBalance')) || 1000;
+  let balance = 1000;
+  const storedBalance = localStorage.getItem('blackjackBalance');
+  if (storedBalance !== null && !isNaN(parseInt(storedBalance))) {
+    balance = parseInt(storedBalance);
+  }
+
   let wins = parseInt(localStorage.getItem('blackjackWins')) || 0;
   let losses = parseInt(localStorage.getItem('blackjackLosses')) || 0;
   let pushes = parseInt(localStorage.getItem('blackjackPushes')) || 0;
@@ -352,18 +357,10 @@
 
     const playerTotal = calculateTotal(playerCards);
 
-    // CORRETTO: il dealer pesca solo finché NON ha almeno eguagliato il giocatore e non ha sballato
     while (true) {
       let dealerTotal = calculateTotal(dealerCards);
-      if (dealerTotal > 21) {
-        // Dealer sballato, stop
-        break;
-      }
-      if (dealerTotal >= playerTotal) {
-        // Dealer ha almeno eguagliato il giocatore, stop
-        break;
-      }
-      // Dealer pesca (truccato)
+      if (dealerTotal > 21) break;
+      if (dealerTotal >= playerTotal) break;
       dealerCards.push(drawDealerCardCheated(dealerCards, playerTotal));
     }
 
